@@ -7,19 +7,27 @@ app.use(express.json());
 app.post('/terraform/plan', (req, res) => {
     const body = req.body;
 
+    // Helper function: JavaScript arrays are technically objects. 
+    // This ensures the value is a strict JSON object {}, not an array [], and not null.
+    const isStrictObject = (obj) => {
+        return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
+    };
+
     // Rule 1: Type Validation (INVALID_PLAN)
-    if (!body ||
+    if (
+        !isStrictObject(body) ||
         typeof body.environment !== 'string' ||
-        typeof body.state !== 'object' || body.state === null ||
+        !isStrictObject(body.state) ||
         typeof body.state.backend !== 'string' ||
         typeof body.state.locked !== 'boolean' ||
         typeof body.providerVersion !== 'string' ||
         typeof body.destroyApproved !== 'boolean' ||
-        typeof body.resource !== 'object' || body.resource === null ||
+        !isStrictObject(body.resource) ||
         typeof body.resource.address !== 'string' ||
         typeof body.resource.type !== 'string' ||
         typeof body.resource.action !== 'string' ||
-        typeof body.resource.labels !== 'object' || body.resource.labels === null ||
+        !["create", "update", "delete"].includes(body.resource.action) ||
+        !isStrictObject(body.resource.labels) ||
         (body.resource.secret !== null && typeof body.resource.secret !== 'string') ||
         typeof body.resource.forceDestroy !== 'boolean'
     ) {
